@@ -1,0 +1,118 @@
+<section class="dashboard" aria-labelledby="dashboard-heading">
+
+  <!-- Hero Header -->
+  <div class="dashboard__header">
+    <div class="dashboard__header-glow" aria-hidden="true"></div>
+    <div class="dashboard__header-content">
+      <div class="dashboard__greeting">
+        <span class="dashboard__dot" aria-hidden="true"></span>
+        <span>Welcome back, Developer</span>
+      </div>
+      <h1 class="dashboard__title" id="dashboard-heading">
+        Your Code Review
+        <span class="gradient-text">Dashboard</span>
+      </h1>
+      <p class="dashboard__subtitle">
+        Track your code quality, catch bugs early, and improve security with AI-powered reviews.
+      </p>
+      <a routerLink="/review" class="btn btn--primary btn--lg" aria-label="Start a new code review">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18" aria-hidden="true">
+          <path d="M9.836.2a1.75 1.75 0 012.886 1.494l-.543 6.521 3.043.904a1.75 1.75 0 01.724 2.862l-6.285 5.93A1.75 1.75 0 016.364 16H1.75A1.75 1.75 0 010 14.25V8.5c0-.483.193-.917.506-1.238L9.836.2z"/>
+        </svg>
+        Start New Review
+      </a>
+    </div>
+  </div>
+
+  <!-- Metrics Grid -->
+  <div class="metrics-grid" role="list" aria-label="Dashboard metrics">
+    @for (metric of metrics; track metric.label; let i = $index) {
+      <div class="metric-card" role="listitem" [style.animation-delay]="(i * 80) + 'ms'">
+        <div class="metric-card__top">
+          <div class="metric-card__icon" [style.background]="metric.bg" [style.color]="metric.color"
+               aria-hidden="true" [innerHTML]="metric.icon"></div>
+          @if (metric.trend) {
+            <span class="metric-card__trend" [style.color]="metric.color">{{ metric.trend }}</span>
+          }
+        </div>
+        <div class="metric-card__value" [style.color]="metric.color" [attr.aria-label]="metric.label + ': ' + metric.value">
+          {{ metric.value }}
+        </div>
+        <div class="metric-card__label">{{ metric.label }}</div>
+      </div>
+    }
+  </div>
+
+  <!-- Recent Reviews + Quick Start -->
+  <div class="dashboard__grid">
+
+    <!-- Recent Reviews -->
+    <div class="dashboard__section">
+      <div class="section-header">
+        <h2 class="section-title">Recent Reviews</h2>
+        @if (historyService.items().length > 0) {
+          <a routerLink="/history" class="btn btn--ghost btn--sm">View all</a>
+        }
+      </div>
+
+      @if (historyService.recentItems().length === 0) {
+        <div class="empty-state" role="status">
+          <svg class="empty-icon" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <rect x="8" y="12" width="48" height="40" rx="6" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+            <path d="M22 28h20M22 36h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+          </svg>
+          <p>No reviews yet. Start your first review!</p>
+          <a routerLink="/review" class="btn btn--secondary btn--sm">Review Code</a>
+        </div>
+      } @else {
+        <div class="review-list" role="list">
+          @for (item of historyService.recentItems(); track item.id) {
+            <app-review-card
+              [item]="item"
+              [compact]="true"
+              (open)="openReview($event)"
+              (delete)="deleteReview($event)" />
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Quick Start & Tips -->
+    <div class="dashboard__side">
+
+      <!-- Quick Start -->
+      <div class="quick-start card">
+        <h2 class="section-title">Quick Start</h2>
+        <div class="quick-start__steps" role="list">
+          @for (step of quickSteps; track step.num) {
+            <div class="qs-step" role="listitem">
+              <div class="qs-step__num" aria-hidden="true">{{ step.num }}</div>
+              <div class="qs-step__body">
+                <span class="qs-step__title">{{ step.title }}</span>
+                <span class="qs-step__desc">{{ step.desc }}</span>
+              </div>
+            </div>
+          }
+        </div>
+        <a routerLink="/review" class="btn btn--primary" style="margin-top:8px;" aria-label="Go to code review">
+          Get Started
+        </a>
+      </div>
+
+      <!-- Languages -->
+      <div class="languages-card card">
+        <h2 class="section-title">Supported Languages</h2>
+        <div class="lang-grid" role="list">
+          @for (lang of languages; track lang.name) {
+            <div class="lang-item" role="listitem">
+              <span class="lang-dot" [style.background]="lang.color" aria-hidden="true"></span>
+              <span class="lang-name">{{ lang.name }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</section>

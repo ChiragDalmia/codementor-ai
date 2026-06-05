@@ -1,0 +1,121 @@
+<section class="history-page" aria-labelledby="history-heading">
+
+  <div class="history-page__header">
+    <div>
+      <h1 class="page-title" id="history-heading">Review History</h1>
+      <p class="page-subtitle">{{ historyService.items().length }} total reviews</p>
+    </div>
+    @if (historyService.items().length > 0) {
+      <button class="btn btn--danger btn--sm"
+              (click)="showClearConfirm.set(true)"
+              aria-label="Clear all review history">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13" aria-hidden="true">
+          <path d="M11 1.75V3h2.25a.75.75 0 010 1.5H2.75a.75.75 0 010-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM4.496 6.675l.66 6.6a.25.25 0 00.249.225h5.19a.25.25 0 00.249-.225l.66-6.6a.75.75 0 011.492.149l-.66 6.6A1.748 1.748 0 0110.595 15h-5.19a1.75 1.75 0 01-1.741-1.576l-.66-6.6a.75.75 0 011.492-.149z"/>
+        </svg>
+        Clear All
+      </button>
+    }
+  </div>
+
+  @if (showClearConfirm()) {
+    <div class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+      <p id="confirm-title">Delete all {{ historyService.items().length }} reviews? This cannot be undone.</p>
+      <div class="confirm-dialog__actions">
+        <button class="btn btn--ghost btn--sm" (click)="showClearConfirm.set(false)">Cancel</button>
+        <button class="btn btn--danger btn--sm" (click)="clearAll()">Delete All</button>
+      </div>
+    </div>
+  }
+
+  @if (historyService.items().length === 0) {
+    <div class="empty-state" role="status">
+      <svg class="empty-icon" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+        <path d="M22 24l6 6-6 6M38 36h-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+        <circle cx="48" cy="16" r="8" fill="url(#h-grad)" opacity="0.8"/>
+        <path d="M48 13v3h3" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <defs>
+          <linearGradient id="h-grad" x1="40" y1="8" x2="56" y2="24">
+            <stop stop-color="#7c3aed"/><stop offset="1" stop-color="#06b6d4"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <h3>No reviews yet</h3>
+      <p>Your review history will appear here after you analyze some code.</p>
+      <a routerLink="/review" class="btn btn--primary">Start First Review</a>
+    </div>
+  } @else {
+    <!-- Search + Filter -->
+    <div class="history-filters">
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M10.68 11.74a6 6 0 01-7.922-8.982 6 6 0 018.982 7.922l3.04 3.04a.749.749 0 11-1.06 1.06l-3.04-3.04zm-5.44-1.19a4.5 4.5 0 100-9 4.5 4.5 0 000 9z"/>
+        </svg>
+        <input
+          type="search"
+          class="input search-input"
+          placeholder="Search reviews..."
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          aria-label="Search review history" />
+      </div>
+
+      <label class="sr-only" for="lang-filter">Filter by language</label>
+      <select id="lang-filter" class="input lang-filter" (change)="onLangFilter($event)"
+              aria-label="Filter by programming language">
+        @for (opt of languageOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+
+    <!-- Results count -->
+    @if (filteredItems().length !== historyService.items().length) {
+      <p class="filter-count" aria-live="polite">
+        Showing {{ filteredItems().length }} of {{ historyService.items().length }} reviews
+      </p>
+    }
+
+    <div class="history-layout" [class.history-layout--split]="selectedItem()">
+
+      <!-- List -->
+      <div class="history-list" role="list" aria-label="Review history">
+        @if (filteredItems().length === 0) {
+          <div class="no-results" role="status">No reviews match your search.</div>
+        } @else {
+          @for (item of filteredItems(); track item.id) {
+            <app-review-card
+              [item]="item"
+              [compact]="!!selectedItem()"
+              [class.review-card--selected]="selectedItem()?.id === item.id"
+              (open)="openItem($event)"
+              (delete)="deleteItem($event)" />
+          }
+        }
+      </div>
+
+      <!-- Detail Panel -->
+      @if (selectedItem()) {
+        <div class="history-detail" role="region" aria-label="Review detail">
+          <div class="history-detail__header">
+            <div class="history-detail__meta">
+              <span class="history-detail__lang">{{ selectedItem()!.language }}</span>
+              <time>{{ selectedItem()!.timestamp | date:'MMM d, y h:mm a' }}</time>
+            </div>
+            <button class="btn btn--ghost btn--sm" (click)="closeItem()" aria-label="Close review detail">
+              <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14" aria-hidden="true">
+                <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
+              </svg>
+              Close
+            </button>
+          </div>
+          <app-review-results
+            [response]="selectedItem()!.response"
+            [originalCode]="selectedItem()!.codeSnippet"
+            [language]="selectedItem()!.language" />
+        </div>
+      }
+    </div>
+  }
+
+</section>
