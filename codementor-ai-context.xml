@@ -1,0 +1,726 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-context>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PROJECT: codementor-ai
+       PURPOSE: Full codebase context for visual redesign prompting
+       GENERATED: 2026-06-09
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <metadata>
+    <name>codementor-ai</name>
+    <description>AI-powered code review tool — pastes code, gets expert review via Google Gemini, saves history locally</description>
+    <working-directory>C:\Users\chira\Downloads\codementor-ai</working-directory>
+    <git-branch>main</git-branch>
+    <git-user>ChiragDalmia</git-user>
+  </metadata>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       SECTION 1: ARCHITECTURE
+       ───────────────────────────────────────────────────────────── -->
+  <architecture>
+    <framework>Angular 21 — standalone components only, zero NgModules</framework>
+    <build-tool>@angular/build (Vite-based), Angular CLI 21</build-tool>
+    <language>TypeScript ~5.9</language>
+    <routing>
+      <provider>provideRouter</provider>
+      <flags>withViewTransitions(), withComponentInputBinding()</flags>
+      <note>withViewTransitions uses native browser View Transitions API for page navigation animations</note>
+    </routing>
+    <http>HttpClient with withFetch() — used exclusively in GeminiService</http>
+    <state-management>
+      <approach>Angular Signals (signal, computed) + RxJS BehaviorSubject for streaming state</approach>
+      <no-library>No NgRx, Akita, or external state library</no-library>
+    </state-management>
+    <persistence>localStorage — history (max 50 items), Gemini API key, theme preference</persistence>
+    <code-editor>
+      <library>monaco-editor 0.55.1</library>
+      <loading-strategy>Custom script injection via document.createElement('script') pointing to assets/monaco/min/vs/loader.js — bypasses ngx-monaco-editor-v2 initialization despite the provider being registered</loading-strategy>
+    </code-editor>
+    <package-dependencies>
+      <dep name="@angular/common" version="^21.2.0" />
+      <dep name="@angular/compiler" version="^21.2.0" />
+      <dep name="@angular/core" version="^21.2.0" />
+      <dep name="@angular/forms" version="^21.2.0" />
+      <dep name="@angular/platform-browser" version="^21.2.0" />
+      <dep name="@angular/router" version="^21.2.0" />
+      <dep name="marked" version="^18.0.5" role="markdown rendering" />
+      <dep name="monaco-editor" version="^0.55.1" role="code editor" />
+      <dep name="ngx-monaco-editor-v2" version="^21.1.4" role="monaco DI provider (partially bypassed)" />
+      <dep name="rxjs" version="~7.8.0" />
+      <dep name="tslib" version="^2.3.0" />
+    </package-dependencies>
+    <folder-structure><![CDATA[
+src/
+  index.html
+  main.ts
+  styles.scss                        ← imports variables, animations, base + Google Fonts
+  styles/
+    _variables.scss                  ← ALL CSS custom properties + SCSS breakpoint mixins
+    _animations.scss                 ← 16 keyframe definitions + utility classes
+    _base.scss                       ← reset, typography, scrollbars, .btn, .badge, .input, .card, .glass utilities
+  environments/
+    environment.ts
+    environment.prod.ts
+  app/
+    app.ts
+    app.html
+    app.routes.ts
+    app.config.ts
+    app.scss
+    core/
+      services/
+        gemini.service.ts            ← Gemini API + BehaviorSubject state machine + mock fallback
+        review-history.service.ts    ← localStorage CRUD + computed metrics
+        theme.service.ts             ← dark/light toggle via data-theme attribute
+    features/
+      landing/
+        landing.component.ts         ← data arrays only (features, testimonials, stats, codeDemo)
+        landing.component.html
+        landing.component.scss
+      dashboard/
+        dashboard.component.ts
+        dashboard.component.html
+        dashboard.component.scss
+      review/
+        review.component.ts          ← orchestrates GeminiService + step animation timers
+        review.component.html
+        review.component.scss
+        components/
+          code-editor/
+            code-editor.component.ts ← Monaco lifecycle + custom dark theme definition
+          review-results/
+            review-results.component.ts ← IssueItemComponent declared inside same file
+      history/
+        history.component.ts
+        history.component.html
+        history.component.scss
+      settings/
+        settings.component.ts
+        settings.component.html
+        settings.component.scss
+    layouts/
+      main-layout/
+        main-layout.component.ts     ← sidebar + topbar inline template; ThemeService + HistoryService injected
+        main-layout.component.scss
+    models/
+      review.model.ts                ← all TypeScript interfaces + CODE_SAMPLES + LANGUAGE_OPTIONS
+    shared/
+      components/
+        diff-viewer/
+          diff-viewer.component.ts   ← naive line-by-line diff algorithm + clipboard copy
+        loading-timeline/
+          loading-timeline.component.ts
+        review-card/
+          review-card.component.ts
+        skeleton-loader/
+          skeleton-loader.component.ts
+    ]]></folder-structure>
+  </architecture>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       SECTION 2: ROUTING
+       ───────────────────────────────────────────────────────────── -->
+  <routing>
+    <shell>MainLayoutComponent wraps ALL routes — sidebar and topbar are always visible, including on /landing</shell>
+    <routes>
+      <route path="" redirectTo="landing" pathMatch="full" />
+      <route path="landing" component="LandingComponent" lazy="true" title="CodeMentor AI — Intelligent Code Review" />
+      <route path="dashboard" component="DashboardComponent" lazy="true" title="Dashboard — CodeMentor AI" />
+      <route path="review" component="ReviewComponent" lazy="true" title="Review Code — CodeMentor AI" />
+      <route path="history" component="HistoryComponent" lazy="true" title="Review History — CodeMentor AI" />
+      <route path="settings" component="SettingsComponent" lazy="true" title="Settings — CodeMentor AI" />
+      <route path="**" redirectTo="landing" />
+    </routes>
+    <known-issue>Landing page renders inside the app shell (sidebar + topbar visible), which is unconventional for a marketing/landing page. A dedicated fullscreen layout shell for /landing would be a cleaner pattern.</known-issue>
+  </routing>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       SECTION 3: COMPONENT MAP (hierarchy)
+       ───────────────────────────────────────────────────────────── -->
+  <component-map>
+    <component name="AppComponent" selector="app-root" file="src/app/app.ts">
+      <children>
+        <component name="MainLayoutComponent" selector="app-main-layout" file="src/app/layouts/main-layout/main-layout.component.ts">
+          <description>Shell layout with fixed sidebar (240px), sticky topbar (60px), and router-outlet for page content. Sidebar collapses to slide-in drawer below 1024px via signal(sidebarOpen). ThemeService and ReviewHistoryService injected.</description>
+          <sidebar>
+            <brand>Logo SVG + "CodeMentor" text + "AI" badge pill</brand>
+            <nav-groups>
+              <group label="Main">Dashboard, Review Code (with history badge count), History</group>
+              <group label="Account">Settings</group>
+            </nav-groups>
+            <footer>Avatar initials "CM" + "Developer" / "Free Plan" static text</footer>
+          </sidebar>
+          <topbar>
+            <left>Hamburger menu button (mobile only) + current page breadcrumb</left>
+            <right>"New Review" primary btn + theme toggle icon btn</right>
+          </topbar>
+          <children>
+            <component name="LandingComponent" path="/landing" file="src/app/features/landing/landing.component.ts">
+              <imports>CommonModule, RouterLink</imports>
+              <data>features[], testimonials[], stats[], codeDemo string — all pure data, no service calls</data>
+            </component>
+            <component name="DashboardComponent" path="/dashboard" file="src/app/features/dashboard/dashboard.component.ts">
+              <imports>CommonModule, RouterLink, ReviewCardComponent</imports>
+              <services>ReviewHistoryService, Router, DomSanitizer</services>
+              <children>
+                <component name="ReviewCardComponent" mode="compact=true" />
+              </children>
+            </component>
+            <component name="ReviewComponent" path="/review" file="src/app/features/review/review.component.ts">
+              <imports>CommonModule, FormsModule, CodeEditorComponent, ReviewResultsComponent, LoadingTimelineComponent, SkeletonLoaderComponent</imports>
+              <services>GeminiService, ReviewHistoryService</services>
+              <state>code signal, language signal, timelineSteps signal, reviewState$ observable</state>
+              <children>
+                <component name="CodeEditorComponent" file="src/app/features/review/components/code-editor/code-editor.component.ts">
+                  <inputs>language: SupportedLanguage, value: string</inputs>
+                  <outputs>valueChange, languageChange</outputs>
+                  <description>Loads Monaco Editor via custom script injection. Defines codementor-dark theme with hardcoded hex colors. ResizeObserver for layout. Lifecycle: OnInit, AfterViewInit, OnChanges, OnDestroy.</description>
+                </component>
+                <component name="ReviewResultsComponent" file="src/app/features/review/components/review-results/review-results.component.ts">
+                  <inputs>response: ReviewResponse, originalCode: string, language: string</inputs>
+                  <state>activeTab signal (summary|bugs|performance|security|refactored)</state>
+                  <grade-logic>computed from total issues + critical security count → A/B/C/D/F</grade-logic>
+                  <children>
+                    <component name="IssueItemComponent" note="Declared in same file as ReviewResultsComponent — no separate file">
+                      <inputs>issue: ReviewIssue, index: number</inputs>
+                    </component>
+                    <component name="DiffViewerComponent" file="src/app/shared/components/diff-viewer/diff-viewer.component.ts">
+                      <inputs>original: string, refactored: string, language: string</inputs>
+                      <description>Naive line-by-line diff (no LCS). Side-by-side panes. Clipboard copy via navigator.clipboard. ngOnChanges triggers recompute.</description>
+                    </component>
+                  </children>
+                </component>
+                <component name="LoadingTimelineComponent" file="src/app/shared/components/loading-timeline/loading-timeline.component.ts">
+                  <inputs>progress: number, currentStep: string, steps: TimelineStep[]</inputs>
+                  <description>Animated progress bar with glow, step pills (pending/active/completed states)</description>
+                </component>
+                <component name="SkeletonLoaderComponent" file="src/app/shared/components/skeleton-loader/skeleton-loader.component.ts">
+                  <inputs>type: 'lines'|'card'|'review'|'metric', label: string, lines: number[]</inputs>
+                  <description>Shimmer skeleton — 3 preset layouts for review, card, metric</description>
+                </component>
+              </children>
+            </component>
+            <component name="HistoryComponent" path="/history" file="src/app/features/history/history.component.ts">
+              <children>
+                <component name="ReviewCardComponent" mode="compact=false (full mode)" />
+                <component name="DiffViewerComponent" />
+              </children>
+            </component>
+            <component name="SettingsComponent" path="/settings" file="src/app/features/settings/settings.component.ts">
+              <services>ThemeService, ReviewHistoryService</services>
+              <state>apiKey signal, apiKeySaved signal, apiKeyVisible signal</state>
+              <description>Gemini API key management (localStorage), theme toggle, clear history</description>
+            </component>
+          </children>
+        </component>
+      </children>
+    </component>
+  </component-map>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       SECTION 4: LANDING PAGE BREAKDOWN
+       ───────────────────────────────────────────────────────────── -->
+  <landing-page>
+    <file-html>src/app/features/landing/landing.component.html</file-html>
+    <file-scss>src/app/features/landing/landing.component.scss</file-scss>
+    <file-ts>src/app/features/landing/landing.component.ts</file-ts>
+    <root-class>landing</root-class>
+
+    <section name="Hero" class="hero" aria-labelledby="hero-heading">
+      <layout>Full viewport (min-height: 100vh). Column on mobile, row on ≥1024px. padding: 120px 64px 80px desktop / 80px 16px 60px mobile.</layout>
+      <background>
+        <element class="hero__orb hero__orb--1">600×600px radial gradient rgba(124,58,237,0.18), top:-100px left:-200px, animation: orb-float-1 12s infinite</element>
+        <element class="hero__orb hero__orb--2">500×500px radial gradient rgba(6,182,212,0.12), bottom:-50px right:-100px, animation: orb-float-2 15s infinite</element>
+        <element class="hero__grid">CSS grid pattern (48px cells) with radial mask fade</element>
+      </background>
+      <content-left class="hero__content" max-width="600px" animation="fadeInUp 0.8s">
+        <badge class="hero__badge">Pill link: pulsing green dot + "New: Gemini 2.0 Flash Integration" + chevron arrow → /review</badge>
+        <h1 class="hero__title" id="hero-heading">
+          "AI Code Reviews" (plain) + "That Actually Work" (gradient-text)
+          font-size: clamp(36px, 5.5vw, 64px), font-weight: 900, letter-spacing: -0.04em
+        </h1>
+        <subtitle class="hero__subtitle">18px, text-secondary, max-width: 520px</subtitle>
+        <actions class="hero__actions">
+          <btn variant="btn--primary btn--lg hero__cta">Lightning bolt icon + "Start Reviewing — Free" → /review. box-shadow: 0 0 40px rgba(124,58,237,0.35)</btn>
+          <btn variant="btn--secondary btn--lg">View Dashboard → /dashboard</btn>
+        </actions>
+        <stats class="hero__proof">
+          <stat value="50K+" label="Code Reviews" />
+          <stat value="200K+" label="Bugs Caught" />
+          <stat value="7" label="Languages" />
+          <stat value="&lt; 5s" label="Review Time" />
+          <!-- values use .gradient-text class -->
+        </stats>
+      </content-left>
+      <content-right class="hero__demo" animation="fadeInUp 0.8s 0.15s" max-width="560px">
+        <header class="hero__demo-header">macOS traffic-light dots + "example.ts" filename + warning badge "2 issues found"</header>
+        <pre class="hero__demo-code">Static code block showing SQL injection before/after. Font: JetBrains Mono, 12px, color: #abb2bf</pre>
+      </content-right>
+    </section>
+
+    <section name="Features" class="features" aria-labelledby="features-heading">
+      <layout>padding: 100px 64px. Flex column, items center. border-top.</layout>
+      <header>section-eyebrow "Capabilities" + H2 "Everything you need for bulletproof code" + section-desc</header>
+      <grid class="features__grid">3-col (2 on ≤1024px, 1 on ≤600px). Max-width: 1100px.</grid>
+      <cards>
+        <card icon="bug"      title="Bug Detection"           color="#ef4444" bg="rgba(239,68,68,0.08)" />
+        <card icon="security" title="Security Analysis"       color="#f59e0b" bg="rgba(245,158,11,0.08)" />
+        <card icon="perf"     title="Performance Optimization" color="#3b82f6" bg="rgba(59,130,246,0.08)" />
+        <card icon="refactor" title="Smart Refactoring"        color="#10b981" bg="rgba(16,185,129,0.08)" />
+        <card icon="editor"   title="Monaco Code Editor"       color="#a78bfa" bg="rgba(167,139,250,0.08)" />
+        <card icon="history"  title="Review History"           color="#06b6d4" bg="rgba(6,182,212,0.08)" />
+      </cards>
+      <card-hover>background: bg-card-hover, border-color: border-default, transform: translateY(-4px), shadow-md</card-hover>
+    </section>
+
+    <section name="HowItWorks" class="how-it-works" aria-labelledby="how-heading">
+      <layout>padding: 100px 64px. Flex column. background: bg-secondary. border-top + border-bottom.</layout>
+      <header>section-eyebrow "How It Works" + H2 "Review in 3 steps"</header>
+      <steps class="hiw__steps">
+        Flex row (column on ≤768px). Connector line via ::before pseudo (gradient, height 1px, hidden on mobile).
+        <step n="01" title="Paste Your Code" />
+        <step n="02" title="Select Language" />
+        <step n="03" title="Get AI Review" />
+        <!-- step numbers: 56px circles, gradient-brand background, box-shadow glow -->
+      </steps>
+    </section>
+
+    <section name="Testimonials" class="testimonials" aria-labelledby="testimonials-heading">
+      <layout>padding: 100px 64px. 3-col grid (1-col on ≤900px). Max-width 1000px.</layout>
+      <header>section-eyebrow "Testimonials" + H2 "Trusted by developers"</header>
+      <cards>
+        <testimonial name="Sarah Chen"       role="Senior Backend Engineer" avatar="SC" color="#7c3aed" />
+        <testimonial name="Marcus Rodriguez" role="Full Stack Developer"     avatar="MR" color="#0891b2" />
+        <testimonial name="Aiko Tanaka"      role="Frontend Engineer"        avatar="AT" color="#059669" />
+      </cards>
+      <card-decoration>Oversized decorative " via ::before, font-size:64px, Georgia serif, color: accent-primary, opacity 0.15</card-decoration>
+      <card-hover>translateY(-4px), shadow-md, border-color: border-default</card-hover>
+    </section>
+
+    <section name="CTA" class="cta-section" aria-labelledby="cta-heading">
+      <layout>padding: 120px 64px. Centered. border-top.</layout>
+      <background>Single 700px orb: radial-gradient rgba(124,58,237,0.12), centered via transform: translate(-50%,-50%)</background>
+      <content>
+        <h2>"Start reviewing your code / right now, for free" (with gradient-text on second line)</h2>
+        <p>No account required. No credit card. Paste your code...</p>
+        <btn variant="btn--primary btn--lg" style="box-shadow: 0 0 60px rgba(124,58,237,0.4); padding: 16px 36px; font-size: 18px">Review My Code Now</btn>
+      </content>
+    </section>
+
+    <footer class="landing-footer">
+      <layout>Flex row (column on ≤768px), space-between. padding: 28px 64px. border-top. background: bg-secondary.</layout>
+      <brand>Logo SVG (28px) + "CodeMentor AI" text</brand>
+      <nav>Dashboard / Review / History / Settings links (13px, text-muted)</nav>
+      <copy>Built with Angular 21 · Powered by Google Gemini (11px, text-muted)</copy>
+    </footer>
+  </landing-page>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       SECTION 5: DESIGN SYSTEM
+       ───────────────────────────────────────────────────────────── -->
+  <design-system>
+
+    <colors file="src/styles/_variables.scss">
+      <group name="Backgrounds">
+        <token name="--bg-primary"    value="#060611"                   note="near-black deep-space" />
+        <token name="--bg-secondary"  value="#0c0c1d"                   note="slightly lighter dark" />
+        <token name="--bg-card"       value="rgba(255,255,255,0.025)"   note="glassmorphism card" />
+        <token name="--bg-card-hover" value="rgba(255,255,255,0.05)"    note="card hover state" />
+        <token name="--bg-glass"      value="rgba(255,255,255,0.04)"    note="glass surface" />
+        <token name="--bg-input"      value="rgba(255,255,255,0.06)"    note="form inputs" />
+        <token name="--bg-overlay"    value="rgba(6,6,17,0.85)"         note="modal overlay" />
+      </group>
+      <group name="Borders">
+        <token name="--border-subtle"  value="rgba(255,255,255,0.06)" />
+        <token name="--border-default" value="rgba(255,255,255,0.10)" />
+        <token name="--border-bright"  value="rgba(255,255,255,0.18)" />
+        <token name="--border-accent"  value="rgba(124,58,237,0.4)"   />
+      </group>
+      <group name="Text">
+        <token name="--text-primary"   value="#f0f0ff"  note="near-white with blue tint" />
+        <token name="--text-secondary" value="#a0a0b8"  />
+        <token name="--text-muted"     value="#4a4a6a"  />
+        <token name="--text-accent"    value="#a78bfa"  note="lavender" />
+      </group>
+      <group name="Brand/Accent">
+        <token name="--accent-primary"   value="#7c3aed"  note="violet — dominant brand color" />
+        <token name="--accent-secondary" value="#4f46e5"  note="indigo" />
+        <token name="--accent-tertiary"  value="#06b6d4"  note="cyan" />
+        <token name="--accent-pink"      value="#ec4899"  note="defined but sparingly used" />
+        <token name="--accent-emerald"   value="#10b981"  note="success / emerald" />
+      </group>
+      <group name="Gradients">
+        <token name="--gradient-brand"      value="linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #06b6d4 100%)" />
+        <token name="--gradient-brand-text" value="linear-gradient(135deg, #a78bfa 0%, #818cf8 50%, #67e8f9 100%)" note="used with gradient-text utility" />
+        <token name="--gradient-card"       value="linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(79,70,229,0.04) 100%)" />
+        <token name="--gradient-glow"       value="radial-gradient(ellipse at center, rgba(124,58,237,0.15) 0%, transparent 70%)" />
+      </group>
+      <group name="Status (all have paired -bg at ~10% opacity)">
+        <token name="--color-success"   value="#10b981" />
+        <token name="--color-warning"   value="#f59e0b" />
+        <token name="--color-error"     value="#ef4444" />
+        <token name="--color-info"      value="#3b82f6" />
+        <token name="--color-critical"  value="#dc2626" />
+      </group>
+      <known-gap name="Light mode not implemented">
+        ThemeService sets document.documentElement.setAttribute('data-theme', 'light') but there is NO
+        :root[data-theme="light"] block in _variables.scss. The toggle button exists in the topbar but
+        visually does nothing. To implement: add a :root[data-theme="light"] { } override block in _variables.scss.
+      </known-gap>
+    </colors>
+
+    <shadows file="src/styles/_variables.scss">
+      <token name="--shadow-sm"      value="0 1px 3px rgba(0,0,0,0.4)" />
+      <token name="--shadow-md"      value="0 4px 16px rgba(0,0,0,0.5)" />
+      <token name="--shadow-lg"      value="0 8px 32px rgba(0,0,0,0.6)" />
+      <token name="--shadow-xl"      value="0 16px 64px rgba(0,0,0,0.7)" />
+      <token name="--shadow-glow"    value="0 0 40px rgba(124,58,237,0.2)" />
+      <token name="--shadow-glow-lg" value="0 0 80px rgba(124,58,237,0.3)" />
+    </shadows>
+
+    <typography file="src/styles/_variables.scss">
+      <fonts>
+        <font name="--font-sans" value="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" weights="300;400;500;600;700;800;900" />
+        <font name="--font-mono" value="'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace" weights="400;500;600" />
+      </fonts>
+      <google-fonts-url>https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap</google-fonts-url>
+      <scale>
+        <token name="--text-xs"   value="11px" />
+        <token name="--text-sm"   value="13px" />
+        <token name="--text-base" value="15px" />
+        <token name="--text-md"   value="16px" />
+        <token name="--text-lg"   value="18px" />
+        <token name="--text-xl"   value="20px" />
+        <token name="--text-2xl"  value="24px" />
+        <token name="--text-3xl"  value="30px" />
+        <token name="--text-4xl"  value="36px" />
+        <token name="--text-5xl"  value="48px" />
+        <token name="--text-6xl"  value="60px" />
+      </scale>
+      <heading-style>font-weight: 800–900, letter-spacing: -0.03em to -0.04em, line-height: 1.08–1.25</heading-style>
+      <body-style>font-size: var(--text-base), line-height: 1.6, -webkit-font-smoothing: antialiased</body-style>
+    </typography>
+
+    <spacing file="src/styles/_variables.scss">
+      <token name="--space-xs"  value="4px" />
+      <token name="--space-sm"  value="8px" />
+      <token name="--space-md"  value="16px" />
+      <token name="--space-lg"  value="24px" />
+      <token name="--space-xl"  value="32px" />
+      <token name="--space-2xl" value="48px" />
+      <token name="--space-3xl" value="64px" />
+      <token name="--space-4xl" value="96px" />
+    </spacing>
+
+    <border-radius file="src/styles/_variables.scss">
+      <token name="--radius-xs"   value="4px" />
+      <token name="--radius-sm"   value="6px" />
+      <token name="--radius-md"   value="10px" />
+      <token name="--radius-lg"   value="14px" />
+      <token name="--radius-xl"   value="18px" />
+      <token name="--radius-2xl"  value="24px" />
+      <token name="--radius-full" value="9999px" />
+    </border-radius>
+
+    <transitions file="src/styles/_variables.scss">
+      <token name="--transition-fast"   value="120ms cubic-bezier(0.4, 0, 0.2, 1)" />
+      <token name="--transition-base"   value="200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+      <token name="--transition-slow"   value="350ms cubic-bezier(0.4, 0, 0.2, 1)" />
+      <token name="--transition-spring" value="400ms cubic-bezier(0.34, 1.56, 0.64, 1)" note="spring bounce" />
+    </transitions>
+
+    <layout-tokens file="src/styles/_variables.scss">
+      <token name="--sidebar-width"      value="240px" />
+      <token name="--header-height"      value="60px" />
+      <token name="--content-max-width"  value="1280px" />
+    </layout-tokens>
+
+    <breakpoints file="src/styles/_variables.scss">
+      <bp name="sm"  value="640px"  />
+      <bp name="md"  value="768px"  />
+      <bp name="lg"  value="1024px" />
+      <bp name="xl"  value="1280px" />
+      <bp name="2xl" value="1536px" />
+      <mixins>mobile (max 767px), tablet (768–1023px), desktop (min 1024px), up-md (min 768px), up-lg (min 1024px)</mixins>
+    </breakpoints>
+
+    <animations file="src/styles/_animations.scss">
+      <keyframes>fadeIn, fadeInUp, fadeInDown, slideInLeft, slideInRight, scaleIn, shimmer, pulse, spin, gradientShift, float, glow, typing, blink, progressFill, dotBounce, ripple, revealLine, orb-float-1, orb-float-2, scanline</keyframes>
+      <utilities>.animate-fade-in, .animate-fade-in-up, .animate-slide-in, .animate-scale-in, .animate-pulse, .animate-spin, .animate-float, .animate-glow</utilities>
+      <stagger>.delay-1 through .delay-12 at 80ms increments (80ms → 960ms)</stagger>
+      <known-gap name="prefers-reduced-motion missing">No @media (prefers-reduced-motion: reduce) wrapper exists anywhere. orb-float-1/2, gradientShift, glow all run infinitely with no opt-out.</known-gap>
+      <known-gap name="gradientShift loops forever">Every .gradient-text element runs gradientShift 4s ease infinite. On a page with many headings this runs many simultaneous animations.</known-gap>
+    </animations>
+
+    <global-css-utilities file="src/styles/_base.scss">
+      <utility name=".sr-only"        desc="screen-reader only, visually hidden" />
+      <utility name=".glass"          desc="backdrop-filter blur(16px) + border-subtle" />
+      <utility name=".glass-card"     desc="bg-card + backdrop-filter + radius-xl + hover state" />
+      <utility name=".gradient-text"  desc="background-clip:text + gradientShift animation" />
+      <utility name=".gradient-border" desc="pseudo-element gradient border via mask technique" />
+      <utility name=".badge"          desc="5 severity variants: --critical, --high, --medium, --low, --success" />
+      <utility name=".btn"            desc="4 variants: --primary (gradient), --secondary (glass), --ghost, --danger. 2 sizes: --sm, --lg" />
+      <utility name=".input"          desc="glass background, accent focus ring, custom select arrow" />
+      <utility name=".card"           desc="bg-card + border-subtle + radius-xl + padding-lg" />
+      <utility name=".metric-card"    desc="extends .card, hover lift + shadow" />
+      <utility name=".divider"        desc="1px horizontal rule in border-subtle" />
+      <utility name=".empty-state"    desc="centered flex column for zero-data states" />
+    </global-css-utilities>
+
+    <monaco-theme name="codementor-dark" file="src/app/features/review/components/code-editor/code-editor.component.ts">
+      <note>Hardcoded hex values — NOT using CSS custom properties. Changing _variables.scss will NOT update Monaco.</note>
+      <editor-background>#0c0c1d</editor-background>
+      <editor-foreground>#f0f0ff</editor-foreground>
+      <line-number-foreground>#3a3a5a</line-number-foreground>
+      <active-line-number>#7c3aed</active-line-number>
+      <selection-background>#7c3aed40</selection-background>
+      <cursor-foreground>#a78bfa</cursor-foreground>
+      <token-comment>foreground: 5c6370 (italic)</token-comment>
+      <token-keyword>foreground: c678dd</token-keyword>
+      <token-string>foreground: 98c379</token-string>
+      <token-number>foreground: d19a66</token-number>
+      <token-type>foreground: e5c07b</token-type>
+      <token-function>foreground: 61afef</token-function>
+      <token-variable>foreground: e06c75</token-variable>
+    </monaco-theme>
+
+  </design-system>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       SECTION 6: SERVICES & BUSINESS LOGIC
+       ───────────────────────────────────────────────────────────── -->
+  <services>
+
+    <service name="GeminiService" file="src/app/core/services/gemini.service.ts" providedIn="root">
+      <state>BehaviorSubject&lt;ReviewState&gt; with status: idle|loading|streaming|complete|error + progress (0–100) + currentStep string</state>
+      <api-endpoint>environment.geminiApiUrl (generativelanguage.googleapis.com) + ?key= from localStorage or environment.geminiApiKey</api-endpoint>
+      <api-body>{ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.4, maxOutputTokens: 4096 } }</api-body>
+      <mock-fallback>If no API key: mockReview() fires 6 setTimeout steps at 400/900/1500/2100/2700/3200ms, resolves after 3600ms via timer()</mock-fallback>
+      <prompt-schema>Returns JSON: { summary, bugs[], performance[], security[], refactoredCode } — each issue has { title, description, severity: critical|high|medium|low, line? }</prompt-schema>
+      <error-handling>Parses err?.error?.error?.message or err.message; on JSON parse fail falls back to buildMockResponse()</error-handling>
+    </service>
+
+    <service name="ReviewHistoryService" file="src/app/core/services/review-history.service.ts" providedIn="root">
+      <storage-key>codementor_history</storage-key>
+      <max-items>50</max-items>
+      <id-generation>crypto.randomUUID()</id-generation>
+      <signals>_items signal, items (readonly), metrics (computed), recentItems (computed, slice 0-5)</signals>
+      <metrics>totalReviews, bugsFound, securityIssues, performanceSuggestions — all derived via reduce</metrics>
+      <code-snippet-truncation>First 200 chars of code stored in history item</code-snippet-truncation>
+    </service>
+
+    <service name="ThemeService" file="src/app/core/services/theme.service.ts" providedIn="root">
+      <signal>_theme: signal&lt;Theme&gt; initialized from localStorage 'theme' key, defaults to 'dark'</signal>
+      <mechanism>Sets document.documentElement.setAttribute('data-theme', theme) — no light theme CSS exists yet</mechanism>
+      <toggle>dark ↔ light, persists to localStorage</toggle>
+    </service>
+
+  </services>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       SECTION 7: DATA MODELS
+       ───────────────────────────────────────────────────────────── -->
+  <models file="src/app/models/review.model.ts">
+    <type name="SupportedLanguage">'javascript' | 'typescript' | 'python' | 'java' | 'cpp' | 'html' | 'css'</type>
+    <interface name="ReviewRequest">language: SupportedLanguage, code: string</interface>
+    <interface name="ReviewResponse">summary: string, bugs: ReviewIssue[], performance: ReviewIssue[], security: ReviewIssue[], refactoredCode: string</interface>
+    <interface name="ReviewIssue">title: string, description: string, severity: 'critical'|'high'|'medium'|'low', line?: number</interface>
+    <interface name="ReviewHistoryItem">id: string, timestamp: ISO string, language, summary, codeSnippet (200 chars), response: ReviewResponse</interface>
+    <interface name="DashboardMetrics">totalReviews, bugsFound, securityIssues, performanceSuggestions</interface>
+    <interface name="DiffLine">type: 'added'|'removed'|'unchanged', content: string, lineNumber: number</interface>
+    <type name="ReviewTab">'summary' | 'bugs' | 'performance' | 'security' | 'refactored'</type>
+    <interface name="ReviewState">status: 'idle'|'loading'|'streaming'|'complete'|'error', progress: number, currentStep: string, response: ReviewResponse|null, error: string|null</interface>
+    <constant name="LANGUAGE_OPTIONS">Array of { value, label, monacoLang } — 7 entries</constant>
+    <constant name="CODE_SAMPLES">Record&lt;SupportedLanguage, string&gt; — intentionally vulnerable sample code per language for demo purposes</constant>
+  </models>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       SECTION 8: SAFE REFACTOR BOUNDARIES
+       ───────────────────────────────────────────────────────────── -->
+  <safe-refactor-boundaries>
+    <rule>These files contain business logic. Visual CSS changes inside their styles are safe. TypeScript logic, @Input/@Output, template bindings, and class name bindings in [class]=... must NOT be changed.</rule>
+
+    <do-not-touch-logic file="src/app/core/services/gemini.service.ts">
+      API call chain, BehaviorSubject state machine, prompt template, JSON response parser, mock review timing (hardcoded delays coupled to ReviewComponent step animation)
+    </do-not-touch-logic>
+
+    <do-not-touch-logic file="src/app/core/services/review-history.service.ts">
+      localStorage schema (key: codementor_history), computed metrics, 50-item cap. Breaking changes propagate to Dashboard and History.
+    </do-not-touch-logic>
+
+    <do-not-touch-logic file="src/app/core/services/theme.service.ts">
+      The data-theme attribute mechanism is the hook for any future light-mode CSS. Do not change the attribute name or storage key.
+    </do-not-touch-logic>
+
+    <do-not-touch-logic file="src/app/features/review/components/code-editor/code-editor.component.ts">
+      Monaco lifecycle (OnInit, AfterViewInit, OnChanges, OnDestroy), custom theme definition (hardcoded hex), ResizeObserver, script-injection loader path (assets/monaco/min/vs/loader.js), editor option object. Very fragile — any structural change risks breaking the editor.
+    </do-not-touch-logic>
+
+    <do-not-touch-logic file="src/app/shared/components/diff-viewer/diff-viewer.component.ts">
+      computeDiff() algorithm (naive line-by-line), copyRefactored() clipboard logic, ngOnChanges trigger pattern.
+    </do-not-touch-logic>
+
+    <do-not-touch-logic file="src/app/features/review/review.component.ts">
+      Step animation delays [400, 900, 1500, 2100, 2700, 3200] are hardcoded and MUST match GeminiService mock step delays exactly. Do not reorder or add steps.
+    </do-not-touch-logic>
+
+    <do-not-touch-logic file="src/app/features/review/components/review-results/review-results.component.ts">
+      Grade calculation (get grade()), activeTab signal, tab IDs used in aria-controls. IssueItemComponent is declared inside this same file — do not split without updating imports.
+    </do-not-touch-logic>
+
+    <do-not-touch-logic file="src/app/models/review.model.ts">
+      All TypeScript types, CODE_SAMPLES, LANGUAGE_OPTIONS — touched by 8+ components.
+    </do-not-touch-logic>
+
+    <do-not-touch-logic file="src/app/app.config.ts">
+      provideMonacoEditor({ baseUrl: './assets/monaco' }) — path must match deployed assets.
+    </do-not-touch-logic>
+
+    <do-not-touch-logic file="src/app/app.routes.ts">
+      Lazy-load import paths. Change URL paths only if intentional.
+    </do-not-touch-logic>
+
+    <safe-to-edit-css-only>
+      <file>src/styles/_variables.scss — PRIMARY TARGET for retheme</file>
+      <file>src/styles/_animations.scss — add prefers-reduced-motion wrappers</file>
+      <file>src/styles/_base.scss — button/badge/input visual adjustments</file>
+      <file>src/app/features/landing/landing.component.scss</file>
+      <file>src/app/layouts/main-layout/main-layout.component.scss</file>
+      <file>src/app/features/dashboard/dashboard.component.scss</file>
+      <file>src/app/features/history/history.component.scss</file>
+      <file>src/app/features/settings/settings.component.scss</file>
+      <file>src/app/features/review/review.component.scss</file>
+      <note>Inline styles[] arrays in shared components are also safe to edit (CSS block only — not [class] bindings in templates)</note>
+    </safe-to-edit-css-only>
+  </safe-refactor-boundaries>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       SECTION 9: ACCESSIBILITY PATTERNS
+       ───────────────────────────────────────────────────────────── -->
+  <accessibility>
+    <patterns-in-use>
+      <pattern>role attributes: main, navigation, banner, contentinfo, region, list, listitem, article, tablist, tab, tabpanel, progressbar, status, img</pattern>
+      <pattern>aria-label on all interactive elements and landmark regions</pattern>
+      <pattern>aria-current="page" on active sidebar nav items</pattern>
+      <pattern>aria-live="polite" on LoadingTimeline and editor stats</pattern>
+      <pattern>aria-controls + aria-selected on tab interface in ReviewResults</pattern>
+      <pattern>aria-valuenow/min/max on progress bar</pattern>
+      <pattern>:focus-visible outline: 2px solid var(--accent-primary) with offset</pattern>
+      <pattern>.sr-only utility class used for screen-reader-only labels</pattern>
+      <pattern>keydown.enter + keydown.space on ReviewCardComponent for keyboard activation</pattern>
+      <pattern>keydown.escape closes sidebar (HostListener on document)</pattern>
+      <pattern>tabindex="-1" on main content element for skip-link target</pattern>
+      <pattern>aria-hidden="true" on all decorative SVG icons and background elements</pattern>
+    </patterns-in-use>
+    <gaps>
+      <gap>No skip-to-content link visible in the HTML</gap>
+      <gap>No prefers-reduced-motion handling for any animation</gap>
+      <gap>Landing page: code demo block role="img" with aria-label but the static code block has no line-by-line accessibility</gap>
+    </gaps>
+  </accessibility>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       SECTION 10: KNOWN GAPS & ISSUES
+       ───────────────────────────────────────────────────────────── -->
+  <known-gaps>
+
+    <gap id="1" severity="high" area="theme">
+      <title>Light mode toggle is visually inert</title>
+      <detail>ThemeService sets data-theme="light" on html element. No :root[data-theme="light"] CSS block exists anywhere. The theme button in the topbar does nothing visually.</detail>
+      <fix>Add :root[data-theme="light"] { --bg-primary: ...; --bg-secondary: ...; ... } in _variables.scss</fix>
+    </gap>
+
+    <gap id="2" severity="medium" area="layout">
+      <title>Landing page is inside the app shell</title>
+      <detail>The /landing route renders inside MainLayoutComponent. The sidebar and topbar (240px + 60px) are visible on the marketing landing page, which consumes screen real estate and looks unconventional.</detail>
+      <fix>Create a FullscreenLayoutComponent with no sidebar/topbar and assign it as the shell for /landing in app.routes.ts</fix>
+    </gap>
+
+    <gap id="3" severity="medium" area="performance">
+      <title>No prefers-reduced-motion media queries</title>
+      <detail>orb-float-1, orb-float-2, gradientShift, glow, pulse, float, spin all run infinitely. No @media (prefers-reduced-motion: reduce) wrappers exist anywhere in the codebase.</detail>
+      <fix>Wrap continuous animations in _animations.scss with @media (prefers-reduced-motion: reduce) { .animate-* { animation: none } }</fix>
+    </gap>
+
+    <gap id="4" severity="low" area="performance">
+      <title>gradientShift runs on every .gradient-text element simultaneously</title>
+      <detail>The landing page alone has ~5 .gradient-text instances. Each runs gradientShift 4s infinite — a composite-layer animation on text. On lower-end devices this can cause jank.</detail>
+      <fix>Change to animation-iteration-count: 1 with animation-fill-mode: forwards, or use animation: none and a static gradient on the text.</fix>
+    </gap>
+
+    <gap id="5" severity="low" area="architecture">
+      <title>Monaco editor bypasses ngx-monaco-editor-v2 initialization</title>
+      <detail>CodeEditorComponent injects its own script tag loading assets/monaco/min/vs/loader.js. ngx-monaco-editor-v2 is registered via provideMonacoEditor() in app.config.ts but its initialization is never used. The package is listed in dependencies but effectively unused for loading.</detail>
+    </gap>
+
+    <gap id="6" severity="low" area="code-quality">
+      <title>currentPageLabel uses window.location.pathname directly</title>
+      <detail>MainLayoutComponent.get currentPageLabel() reads window.location.pathname. Not reactive — won't update on route changes without a full CD cycle. Should use ActivatedRoute or Router.events.</detail>
+    </gap>
+
+    <gap id="7" severity="info" area="dependencies">
+      <title>marked library may be unused</title>
+      <detail>marked@18.0.5 is in dependencies but no import of it is visible in the scanned TypeScript files. ReviewResults renders response.summary as plain text {{ response.summary }}, not as HTML. Either it's unused or called in a file not yet read (e.g., history component detail view).</detail>
+    </gap>
+
+  </known-gaps>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       SECTION 11: REDESIGN STRATEGY RECOMMENDATIONS
+       ───────────────────────────────────────────────────────────── -->
+  <redesign-strategy>
+
+    <principle>All visual changes should be CSS-only unless explicitly noted. The design token system in _variables.scss is the single source of truth — retheme there first, everything else follows.</principle>
+
+    <phase number="1" name="Token Retheme" risk="zero" files="_variables.scss only">
+      Replace CSS custom property values to change the entire palette. The gradient-brand and gradient-brand-text tokens drive: sidebar active states, step numbers, badge pills, CTA button, all .gradient-text instances, focus rings, scrollbar thumbs, Monaco cursor/selection. Changing these 2 tokens cascades across the whole app.
+    </phase>
+
+    <phase number="2" name="Light Mode Implementation" risk="low" files="_variables.scss">
+      Add :root[data-theme="light"] block with overridden values. The ThemeService hook (data-theme attribute) is already in place. Monaco theme (codementor-dark) will need a separate light variant defined in CodeEditorComponent — those colors are hardcoded.
+    </phase>
+
+    <phase number="3" name="Landing Page Isolation" risk="low-medium" files="app.routes.ts (new shell), new layout component">
+      Create FullscreenLayoutComponent (router-outlet only, no sidebar/topbar). Assign it to /landing. LandingComponent itself is untouched. This is a routing-level change only.
+    </phase>
+
+    <phase number="4" name="Landing Visual Refresh" risk="low" files="landing.component.scss only">
+      Safe targets within the landing SCSS:
+      - Hero: adjust orb colors/opacity, grid pattern density, add third orb for depth
+      - Features grid: add gradient-border utility or gradient card hover instead of flat border
+      - How It Works: replace pseudo-element connector line with a thicker SVG arrow or animated path
+      - Testimonials: add shadow-glow on hover for accent depth
+      - CTA: add second blurred orb in complementary brand color, increase title size
+      - Footer: increase padding, add subtle gradient fade at top border
+    </phase>
+
+    <phase number="5" name="Animation Polish" risk="low" files="_animations.scss">
+      - Add @media (prefers-reduced-motion: reduce) wrappers for all infinite animations
+      - Change gradientShift on .gradient-text to iteration-count: 1 or remove loop
+      - Add will-change: transform to orb elements for GPU compositing hint
+      - Ensure entrance animations (fadeInUp) on feat-card respect stagger delays correctly
+    </phase>
+
+    <caution name="Monaco theme">
+      The Monaco editor background (#0c0c1d) matches --bg-secondary by coincidence of hardcoded value. If you change --bg-secondary you must also update the 'editor.background' color inside CodeEditorComponent.initEditor() manually — it does NOT reference CSS variables.
+    </caution>
+
+    <caution name="DomSanitizer.bypassSecurityTrustHtml">
+      MainLayoutComponent and DashboardComponent use DomSanitizer to inject SVG icons as innerHTML. If you replace icons with a different approach (e.g., ng-icons, direct SVG components), remove the bypassSecurityTrustHtml calls and the DomSanitizer injection.
+    </caution>
+
+  </redesign-strategy>
+
+</project-context>

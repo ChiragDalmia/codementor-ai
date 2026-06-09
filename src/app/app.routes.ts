@@ -2,17 +2,19 @@ import { Routes } from '@angular/router';
 import { MainLayoutComponent } from './layouts/main-layout/main-layout.component';
 
 export const routes: Routes = [
+  // Fullscreen marketing page — no app chrome.
+  {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/landing/landing.component').then(m => m.LandingComponent),
+    title: 'CodeMentor AI — Your second senior engineer',
+  },
+  // Product shell.
   {
     path: '',
     component: MainLayoutComponent,
     children: [
-      { path: '', redirectTo: 'landing', pathMatch: 'full' },
-      {
-        path: 'landing',
-        loadComponent: () =>
-          import('./features/landing/landing.component').then(m => m.LandingComponent),
-        title: 'CodeMentor AI — Intelligent Code Review',
-      },
       {
         path: 'dashboard',
         loadComponent: () =>
@@ -39,5 +41,6 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '**', redirectTo: 'landing' },
+  { path: 'landing', redirectTo: '' },
+  { path: '**', redirectTo: '' },
 ];

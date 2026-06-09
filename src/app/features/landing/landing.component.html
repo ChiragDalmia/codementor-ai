@@ -1,195 +1,354 @@
-<div class="landing" role="main">
-
-  <!-- Hero Section -->
-  <section class="hero" aria-labelledby="hero-heading">
-    <div class="hero__bg" aria-hidden="true">
-      <div class="hero__orb hero__orb--1"></div>
-      <div class="hero__orb hero__orb--2"></div>
-      <div class="hero__grid"></div>
-    </div>
-
-    <div class="hero__content">
-      <a class="hero__badge" routerLink="/review" aria-label="New: Gemini 2.0 Flash integration">
-        <span class="hero__badge-dot" aria-hidden="true"></span>
-        New: Gemini 2.0 Flash Integration
-        <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12" aria-hidden="true">
-          <path d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z"/>
+<!-- ═══ Boot sequence (one-time) ═══════════════════════════════ -->
+@if (booting()) {
+  <div class="boot" [class.boot--out]="bootStep() >= 5" aria-hidden="true">
+    <div class="boot__inner">
+      <div class="boot__logo" [class.is-on]="bootStep() >= 1">
+        <svg viewBox="0 0 48 48" fill="none">
+          <rect class="boot__logo-frame" x="2.5" y="2.5" width="43" height="43" rx="14" />
+          <path class="boot__logo-mark" d="M15 18l6 6-6 6M25 30h9" />
         </svg>
+      </div>
+      <div class="boot__lines" [class.is-on]="bootStep() >= 2">
+        <div class="boot__line"><i style="width: 12%" class="c-k"></i><i style="width: 30%"></i><i style="width: 16%" class="c-s"></i></div>
+        <div class="boot__line"><i style="width: 20%" class="c-fn"></i><i style="width: 10%"></i><i style="width: 26%" class="c-k"></i></div>
+        <div class="boot__line"><i style="width: 8%" class="c-s"></i><i style="width: 38%"></i></div>
+        <div class="boot__scan" [class.is-on]="bootStep() === 3 || bootStep() === 4"></div>
+      </div>
+      <div class="boot__bar"><span class="boot__fill" [class.is-on]="bootStep() >= 4"></span></div>
+      <p class="boot__status">{{ bootStatus() }}</p>
+    </div>
+  </div>
+}
+
+<div class="lp" [class.lp--ready]="!booting()">
+  <!-- ═══ Nav ═══════════════════════════════════════════════════ -->
+  <header class="nav" [class.nav--scrolled]="navScrolled()">
+    <div class="nav__inner">
+      <a class="nav__brand" href="/" (click)="$event.preventDefault(); scrollTo('top')" aria-label="CodeMentor AI">
+        <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <rect width="32" height="32" rx="9" fill="url(#nav-logo-grad)" />
+          <path d="M9 12l4 4-4 4M16 20h7" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+          <defs>
+            <linearGradient id="nav-logo-grad" x1="0" y1="0" x2="32" y2="32">
+              <stop stop-color="#7c3aed" />
+              <stop offset="1" stop-color="#06b6d4" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="nav__name">CodeMentor<em>AI</em></span>
       </a>
+      <nav class="nav__links" aria-label="Page sections">
+        <button type="button" (click)="scrollTo('why')">Why</button>
+        <button type="button" (click)="scrollTo('engine')">Engine</button>
+        <button type="button" (click)="scrollTo('demo')">Demo</button>
+        <button type="button" (click)="scrollTo('results')">Results</button>
+      </nav>
+      <a routerLink="/review" class="nav__cta">
+        Open the app
+        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10m0 0L9 4m4 4l-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </a>
+    </div>
+  </header>
 
-      <h1 class="hero__title" id="hero-heading">
-        AI Code Reviews
-        <span class="gradient-text">That Actually Work</span>
-      </h1>
-
-      <p class="hero__subtitle">
-        Paste your code. Get an expert-level review in seconds. Catch bugs, security vulnerabilities, and performance issues before they ship — powered by Google Gemini AI.
-      </p>
-
-      <div class="hero__actions">
-        <a routerLink="/review" class="btn btn--primary btn--lg hero__cta" aria-label="Start reviewing your code for free">
-          <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18" aria-hidden="true">
-            <path d="M9.836.2a1.75 1.75 0 012.886 1.494l-.543 6.521 3.043.904a1.75 1.75 0 01.724 2.862l-6.285 5.93A1.75 1.75 0 016.364 16H1.75A1.75 1.75 0 010 14.25V8.5c0-.483.193-.917.506-1.238L9.836.2z"/>
-          </svg>
-          Start Reviewing — Free
-        </a>
-        <a routerLink="/dashboard" class="btn btn--secondary btn--lg" aria-label="View dashboard">
-          View Dashboard
-        </a>
-      </div>
-
-      <div class="hero__proof" aria-label="Social proof statistics">
-        @for (stat of stats; track stat.label) {
-          <div class="hero__stat">
-            <span class="hero__stat-value gradient-text">{{ stat.value }}</span>
-            <span class="hero__stat-label">{{ stat.label }}</span>
+  <main id="top">
+    <!-- ═══ 1 · Arrival ═════════════════════════════════════════ -->
+    <section class="hero">
+      <div class="hero__aura" data-parallax="0.14" aria-hidden="true"></div>
+      <div class="wrap hero__grid">
+        <div class="hero__copy">
+          <p class="eyebrow" data-reveal>// code review engine</p>
+          <h1 class="hero__title" data-reveal style="--rd: 90ms">
+            Your second<br /><em>senior engineer.</em>
+          </h1>
+          <p class="hero__lede" data-reveal style="--rd: 180ms">
+            CodeMentor reads your code the way a staff engineer would — and answers in seconds.
+            Bugs, vulnerabilities, performance traps, and a refactor you can ship.
+          </p>
+          <div class="hero__actions" data-reveal style="--rd: 270ms">
+            <a routerLink="/review" class="cta cta--primary cta--lg">
+              Review my code
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10m0 0L9 4m4 4l-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </a>
+            <button type="button" class="cta cta--ghost cta--lg" (click)="scrollTo('demo')">Watch it think</button>
           </div>
-        }
-      </div>
-    </div>
-
-    <!-- Code Demo -->
-    <div class="hero__demo" aria-label="Code review example" role="img">
-      <div class="hero__demo-header">
-        <div class="hero__demo-dots" aria-hidden="true">
-          <span></span><span></span><span></span>
+          <ul class="hero__trust" data-reveal style="--rd: 360ms">
+            <li>No signup</li>
+            <li>Seven languages</li>
+            <li>History stays on your machine</li>
+          </ul>
         </div>
-        <span class="hero__demo-title">example.ts</span>
-        <span class="hero__demo-badge">
-          <span class="hero__demo-badge-dot" aria-hidden="true"></span>
-          2 issues found
-        </span>
-      </div>
-      <pre class="hero__demo-code" aria-label="Code review example showing SQL injection fix"><code>{{ codeDemo }}</code></pre>
-    </div>
-  </section>
 
-  <!-- Features Section -->
-  <section class="features" aria-labelledby="features-heading">
-    <div class="features__header">
-      <p class="section-eyebrow" aria-hidden="true">Capabilities</p>
-      <h2 class="section-title" id="features-heading">
-        Everything you need for<br/>
-        <span class="gradient-text">bulletproof code</span>
-      </h2>
-      <p class="section-desc">
-        CodeMentor AI gives you the same feedback a senior engineer would — without the wait, scheduling, or politics.
-      </p>
-    </div>
-
-    <div class="features__grid" role="list">
-      @for (feat of features; track feat.title; let i = $index) {
-        <div class="feat-card" role="listitem" [style.animation-delay]="(i * 80) + 'ms'">
-          <div class="feat-card__icon" [style.background]="feat.bg" [style.color]="feat.color" aria-hidden="true">
-            <ng-container [ngSwitch]="feat.icon">
-              <svg *ngSwitchCase="'bug'" viewBox="0 0 16 16" fill="currentColor" width="22" height="22"><path d="M8 1.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9zM2 6a6 6 0 1110.174 4.31l2.512 2.512a.75.75 0 11-1.06 1.06L11.114 11.37A6 6 0 012 6z"/></svg>
-              <svg *ngSwitchCase="'security'" viewBox="0 0 16 16" fill="currentColor" width="22" height="22"><path d="M7.467.133a1.75 1.75 0 011.066 0l5.25 1.68A1.75 1.75 0 0115 3.48V7c0 1.566-.832 3.37-2.8 4.9-1.854 1.445-4.197 2.1-4.2 2.1a.753.753 0 01-.4 0c-.003 0-2.346-.655-4.2-2.1C1.832 10.37 1 8.566 1 7V3.48a1.75 1.75 0 011.217-1.667l5.25-1.68z"/></svg>
-              <svg *ngSwitchCase="'perf'" viewBox="0 0 16 16" fill="currentColor" width="22" height="22"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM7.25 4.5a.75.75 0 011.5 0V8a.75.75 0 01-.75.75H5.25a.75.75 0 010-1.5H7.25V4.5z"/></svg>
-              <svg *ngSwitchCase="'refactor'" viewBox="0 0 16 16" fill="currentColor" width="22" height="22"><path d="M1.5 3.25a1.75 1.75 0 113.5 0 1.75 1.75 0 01-3.5 0zM3.25 1a2.25 2.25 0 00-2.193 2.75H.75a.75.75 0 000 1.5h.312A2.251 2.251 0 005.5 5.093V7.25h2.25V5.093a2.251 2.251 0 002.688-.593h.312a.75.75 0 000-1.5h-.312A2.25 2.25 0 006.25 1H3.25zm5.5 9.5a1.75 1.75 0 113.5 0 1.75 1.75 0 01-3.5 0zm1.75-3.25a3.75 3.75 0 100 7.5 3.75 3.75 0 000-7.5z"/></svg>
-              <svg *ngSwitchCase="'editor'" viewBox="0 0 16 16" fill="currentColor" width="22" height="22"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0113.25 16h-9.5A1.75 1.75 0 012 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 00.25-.25V6h-2.75A1.75 1.75 0 019 4.25V1.5H3.75z"/></svg>
-              <svg *ngSwitchDefault viewBox="0 0 16 16" fill="currentColor" width="22" height="22"><path d="M1.643 3.143L.427 1.927A.25.25 0 000 2.104V5.75c0 .138.112.25.25.25h3.646a.25.25 0 00.177-.427L2.715 4.215a6.5 6.5 0 11-1.18 4.458.75.75 0 10-1.493.154 8.001 8.001 0 101.6-5.684z"/></svg>
-            </ng-container>
-          </div>
-          <h3 class="feat-card__title">{{ feat.title }}</h3>
-          <p class="feat-card__desc">{{ feat.desc }}</p>
-        </div>
-      }
-    </div>
-  </section>
-
-  <!-- How It Works -->
-  <section class="how-it-works" aria-labelledby="how-heading">
-    <div class="hiw__header">
-      <p class="section-eyebrow" aria-hidden="true">How It Works</p>
-      <h2 class="section-title" id="how-heading">
-        Review in <span class="gradient-text">3 steps</span>
-      </h2>
-    </div>
-
-    <div class="hiw__steps" role="list">
-      @for (step of [
-        { n: '01', title: 'Paste Your Code', desc: 'Open the editor and paste any code snippet — functions, classes, files, or entire modules.' },
-        { n: '02', title: 'Select Language', desc: 'Choose your language from JavaScript, TypeScript, Python, Java, C++, HTML, or CSS.' },
-        { n: '03', title: 'Get AI Review', desc: 'Gemini AI analyses your code and returns bugs, security issues, performance tips, and refactored code.' }
-      ]; track step.n) {
-        <div class="hiw-step" role="listitem">
-          <div class="hiw-step__num" aria-hidden="true">{{ step.n }}</div>
-          <h3 class="hiw-step__title">{{ step.title }}</h3>
-          <p class="hiw-step__desc">{{ step.desc }}</p>
-        </div>
-      }
-    </div>
-  </section>
-
-  <!-- Testimonials -->
-  <section class="testimonials" aria-labelledby="testimonials-heading">
-    <div class="testimonials__header">
-      <p class="section-eyebrow" aria-hidden="true">Testimonials</p>
-      <h2 class="section-title" id="testimonials-heading">
-        Trusted by <span class="gradient-text">developers</span>
-      </h2>
-    </div>
-
-    <div class="testimonials__grid" role="list">
-      @for (t of testimonials; track t.name) {
-        <blockquote class="testimonial-card" role="listitem">
-          <p class="testimonial-card__quote">"{{ t.quote }}"</p>
-          <footer class="testimonial-card__footer">
-            <div class="testimonial-card__avatar" [style.background]="t.color" aria-hidden="true">{{ t.avatar }}</div>
-            <div>
-              <cite class="testimonial-card__name">{{ t.name }}</cite>
-              <span class="testimonial-card__role">{{ t.role }}</span>
+        <div class="hero__visual" aria-hidden="true" data-reveal style="--rd: 220ms">
+          <div class="scene" data-parallax="-0.07">
+            <i class="scene__halo"></i>
+            <div class="cube">
+              <i class="cube__face cube__face--f"></i>
+              <i class="cube__face cube__face--b"></i>
+              <i class="cube__face cube__face--l"></i>
+              <i class="cube__face cube__face--r"></i>
+              <i class="cube__face cube__face--t"></i>
+              <i class="cube__face cube__face--d"></i>
+              <span class="cube__core"></span>
             </div>
-          </footer>
-        </blockquote>
-      }
-    </div>
-  </section>
+            <i class="scene__ring scene__ring--a"></i>
+            <i class="scene__ring scene__ring--b"></i>
+            <i class="scene__shadow"></i>
+          </div>
+        </div>
+      </div>
 
-  <!-- CTA -->
-  <section class="cta-section" aria-labelledby="cta-heading">
-    <div class="cta-section__bg" aria-hidden="true">
-      <div class="cta-section__orb"></div>
-    </div>
-    <div class="cta-section__content">
-      <h2 class="cta-section__title" id="cta-heading">
-        Start reviewing your code<br/>
-        <span class="gradient-text">right now, for free</span>
-      </h2>
-      <p class="cta-section__desc">
-        No account required. No credit card. Paste your code and get an AI-powered review in seconds.
+      <div class="wrap" data-reveal style="--rd: 480ms">
+        <div class="hero__meter">
+          <div class="meter"><strong>&lt;5s</strong><span>median review</span></div>
+          <div class="meter"><strong>4</strong><span>passes per paste</span></div>
+          <div class="meter"><strong>7</strong><span>languages</span></div>
+          <div class="meter"><strong>0</strong><span>setup required</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 2 · Why reviews fail ════════════════════════════════ -->
+    <section class="problem" id="why">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>01 · Why reviews fail</p>
+        <h2 class="problem__title" data-reveal style="--rd: 80ms">
+          Great engineers make<br /><em>bad reviewers.</em>
+        </h2>
+        <p class="problem__sub" data-reveal style="--rd: 160ms">
+          Not because they're careless — because they're busy. Review happens in the margins
+          of someone else's day, and the margins are where bugs live.
+        </p>
+
+        <div class="problem__beats">
+          <article class="beat beat--a" data-reveal>
+            <strong>26h</strong>
+            <h3>before first review</h3>
+            <p>The median pull request waits a full day for eyes that are busy writing their own code.</p>
+          </article>
+          <article class="beat beat--b" data-reveal style="--rd: 120ms">
+            <strong>15%</strong>
+            <h3>of comments catch defects</h3>
+            <p>The rest are naming, formatting, and taste. Style ships either way. So do the bugs.</p>
+          </article>
+          <article class="beat beat--c" data-reveal style="--rd: 240ms">
+            <strong>1</strong>
+            <h3>tired pair of eyes</h3>
+            <p>Between your diff and production there is usually exactly one reviewer — at 4:50 on a Friday.</p>
+          </article>
+        </div>
+
+        <p class="problem__close" data-reveal>Reviews fail quietly. <span>The bug doesn't.</span></p>
+      </div>
+    </section>
+
+    <!-- ═══ 3 · The engine ══════════════════════════════════════ -->
+    <section class="engine" id="engine">
+      <div class="wrap engine__grid">
+        <div class="engine__copy">
+          <p class="eyebrow" data-reveal>02 · The engine</p>
+          <h2 data-reveal style="--rd: 80ms">One paste.<br />Four passes.<br /><em>Every line.</em></h2>
+          <p class="engine__sub" data-reveal style="--rd: 160ms">
+            A human reviewer skims. The engine doesn't know how. Each review runs four
+            specialist passes over every line you paste — in parallel, in seconds.
+          </p>
+          <ol class="engine__steps">
+            @for (step of engineSteps; track step.title; let i = $index) {
+              <li class="engine__step" [class.is-active]="engineStep() === i" [attr.data-step]="i">
+                <span class="engine__no">0{{ i + 1 }}</span>
+                <div>
+                  <h3>{{ step.title }}</h3>
+                  <p>{{ step.copy }}</p>
+                </div>
+              </li>
+            }
+          </ol>
+        </div>
+
+        <div class="engine__visual" aria-hidden="true">
+          <div class="reactor" [attr.data-on]="engineStep()">
+            <i class="reactor__orbit reactor__orbit--a"></i>
+            <i class="reactor__orbit reactor__orbit--b"></i>
+            <span class="reactor__core"></span>
+            @for (node of reactorNodes; track node.k; let i = $index) {
+              <span
+                class="reactor__node reactor__node--{{ i + 1 }}"
+                [class.is-on]="engineStep() === i"
+                (pointerenter)="engineStep.set(i)"
+                (click)="engineStep.set(i)"
+              >{{ node.k }}</span>
+            }
+            <span class="reactor__label">{{ reactorNodes[engineStep()].label }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 4 · Live review demo ════════════════════════════════ -->
+    <section class="demo" id="demo">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>03 · Live review</p>
+        <h2 class="demo__title" data-reveal style="--rd: 80ms">Watch a review <em>happen.</em></h2>
+        <p class="demo__sub" data-reveal style="--rd: 160ms">
+          The real flow — paste, scan, findings, refactor. About five seconds. No dramatization.
+        </p>
+      </div>
+
+      <div class="wrap demo__stage">
+        <div class="demo__rail" data-reveal>
+          @for (stage of demoStages; track stage; let i = $index) {
+            <div class="demo__railItem" [class.is-active]="stageIndex() === i" [class.is-done]="stageIndex() > i">
+              <span class="demo__railDot"></span>{{ stage }}
+            </div>
+          }
+          @if (showRefactor()) {
+            <button type="button" class="demo__replay" (click)="replayDemo()">
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 11-1.6-3.9M13.5 1.5v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              Replay
+            </button>
+          }
+        </div>
+
+        <div class="demo__board" data-reveal style="--rd: 120ms">
+          <div class="demo__editor">
+            <div class="demo__chrome">
+              <span class="demo__dot"></span><span class="demo__dot"></span><span class="demo__dot"></span>
+              <span class="demo__file">user-service.js</span>
+              @if (showRefactor()) { <span class="demo__filetag">refactored</span> }
+            </div>
+            <div class="demo__codewrap">
+              <div class="demo__pane" [class.is-hidden]="showRefactor()">
+                @for (line of demoBefore; track line.n) {
+                  <div class="demo__line" [class.is-typed]="typedCount() >= line.n" [attr.data-mark]="lineMark(line)">
+                    <span class="demo__ln">{{ line.n }}</span><span class="demo__src">@for (t of line.tokens; track $index) {<span class="t-{{ t[1] || 'd' }}">{{ t[0] }}</span>}</span>
+                  </div>
+                }
+              </div>
+              <div class="demo__pane demo__pane--after" [class.is-shown]="showRefactor()">
+                @for (line of demoAfter; track line.n) {
+                  <div class="demo__line is-typed" [attr.data-mark]="line.add ? 'add' : null">
+                    <span class="demo__ln">{{ line.n }}</span><span class="demo__src">@for (t of line.tokens; track $index) {<span class="t-{{ t[1] || 'd' }}">{{ t[0] }}</span>}</span>
+                  </div>
+                }
+              </div>
+              <div class="demo__scanbeam" [class.is-running]="demoPhase() === 'scanning'"></div>
+            </div>
+          </div>
+
+          <div class="demo__side">
+            @for (f of demoFindings; track f.title; let i = $index) {
+              <article class="finding finding--{{ f.sev }}" [class.is-in]="findingCount() > i">
+                <header>
+                  <span class="finding__badge">{{ f.label }}</span>
+                  <span class="finding__loc">{{ f.loc }}</span>
+                </header>
+                <h3>{{ f.title }}</h3>
+                <p>{{ f.desc }}</p>
+                <code>{{ f.fix }}</code>
+              </article>
+            }
+            <div class="demo__verdict" [class.is-in]="showRefactor()">
+              <strong>3 issues · 1 critical</strong>
+              <p>Refactor generated. Diff it, take what you like.</p>
+              <a routerLink="/review" class="cta cta--primary cta--sm">
+                Run it on your code
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10m0 0L9 4m4 4l-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 5 · Workflow ════════════════════════════════════════ -->
+    <section class="workflow" id="workflow">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>04 · Workflow</p>
+        <h2 data-reveal style="--rd: 80ms">Built for the thirty seconds<br />you <em>actually have.</em></h2>
+        <div class="workflow__steps">
+          <article class="wstep" data-reveal>
+            <span>01</span>
+            <h3>Paste</h3>
+            <p>A function, a file, or the thing you wrote at 2am. Monaco editor, seven languages, zero configuration.</p>
+          </article>
+          <article class="wstep wstep--mid" data-reveal style="--rd: 130ms">
+            <span>02</span>
+            <h3>Review</h3>
+            <p>Four passes run as one. Findings come back ranked by severity, anchored to lines, written in plain engineering.</p>
+          </article>
+          <article class="wstep" data-reveal style="--rd: 260ms">
+            <span>03</span>
+            <h3>Ship</h3>
+            <p>Take the refactor, diff it against your original, keep what you like. Every review saved locally for the retro.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 6 · Results & impact ════════════════════════════════ -->
+    <section class="impact" id="results">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>05 · Results</p>
+        <h2 data-reveal style="--rd: 80ms">The numbers after<br />the <em>paste.</em></h2>
+
+        <div class="impact__stats">
+          @for (s of stats; track s.label; let i = $index) {
+            <div class="impact__stat" data-reveal [style.--rd]="i * 100 + 'ms'">
+              <strong>{{ s.prefix }}{{ statValues()[i] }}{{ s.suffix }}</strong>
+              <span>{{ s.label }}</span>
+            </div>
+          }
+        </div>
+
+        <figure class="impact__quote" data-reveal>
+          <blockquote>
+            "It flagged a SQL injection in our payment path during the demo. <em>The demo.</em>"
+          </blockquote>
+          <figcaption>Sarah Chen — Senior Backend Engineer</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ═══ 7 · Final conversion ════════════════════════════════ -->
+    <section class="closer">
+      <div class="closer__aura" aria-hidden="true"></div>
+      <div class="closer__object" aria-hidden="true" data-reveal>
+        <div class="shard"><i></i><i></i><span></span></div>
+      </div>
+      <h2 data-reveal style="--rd: 100ms">Ship code<br /><em>you're sure of.</em></h2>
+      <p data-reveal style="--rd: 200ms">
+        Your next review takes five seconds. The bug it catches would have taken your evening.
       </p>
-      <a routerLink="/review" class="btn btn--primary btn--lg cta-section__btn" aria-label="Start your free code review now">
-        <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18" aria-hidden="true">
-          <path d="M9.836.2a1.75 1.75 0 012.886 1.494l-.543 6.521 3.043.904a1.75 1.75 0 01.724 2.862l-6.285 5.93A1.75 1.75 0 016.364 16H1.75A1.75 1.75 0 010 14.25V8.5c0-.483.193-.917.506-1.238L9.836.2z"/>
+      <div class="closer__actions" data-reveal style="--rd: 300ms">
+        <a routerLink="/review" class="cta cta--primary cta--lg">Start a free review</a>
+        <a routerLink="/dashboard" class="cta cta--ghost cta--lg">Browse the dashboard</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- ═══ Footer ════════════════════════════════════════════════ -->
+  <footer class="foot">
+    <div class="wrap foot__inner">
+      <div class="foot__brand">
+        <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <rect width="32" height="32" rx="9" fill="url(#foot-logo-grad)" />
+          <path d="M9 12l4 4-4 4M16 20h7" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+          <defs>
+            <linearGradient id="foot-logo-grad" x1="0" y1="0" x2="32" y2="32">
+              <stop stop-color="#7c3aed" />
+              <stop offset="1" stop-color="#06b6d4" />
+            </linearGradient>
+          </defs>
         </svg>
-        Review My Code Now
-      </a>
+        CodeMentor AI
+      </div>
+      <p class="foot__line">Built for developers, students, and the people who hire them.</p>
+      <nav class="foot__nav" aria-label="Product">
+        <a routerLink="/review">Review</a>
+        <a routerLink="/dashboard">Dashboard</a>
+        <a routerLink="/history">History</a>
+        <a routerLink="/settings">Settings</a>
+      </nav>
+      <span class="foot__copy">© 2026 CodeMentor AI</span>
     </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="landing-footer" role="contentinfo">
-    <div class="landing-footer__brand">
-      <svg viewBox="0 0 28 28" fill="none" width="24" height="24" aria-hidden="true">
-        <rect width="28" height="28" rx="8" fill="url(#f-grad)"/>
-        <path d="M7 11l3.5 3.5L7 18M15 18h6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <defs>
-          <linearGradient id="f-grad" x1="0" y1="0" x2="28" y2="28">
-            <stop stop-color="#7c3aed"/>
-            <stop offset="1" stop-color="#06b6d4"/>
-          </linearGradient>
-        </defs>
-      </svg>
-      <span>CodeMentor AI</span>
-    </div>
-    <nav class="landing-footer__links" aria-label="Footer navigation">
-      <a routerLink="/dashboard">Dashboard</a>
-      <a routerLink="/review">Review</a>
-      <a routerLink="/history">History</a>
-      <a routerLink="/settings">Settings</a>
-    </nav>
-    <p class="landing-footer__copy">Built with Angular 21 · Powered by Google Gemini</p>
   </footer>
-
 </div>
