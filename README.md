@@ -1,5 +1,7 @@
 # CodeMentor AI — Intelligent Code Review Engine
 
+**Case study:** [chiragdalmia.com/projects/codementor-ai](https://www.chiragdalmia.com/projects/codementor-ai)
+
 ![Angular](https://img.shields.io/badge/Angular-21-DD0031?style=flat-square&logo=angular&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![RxJS](https://img.shields.io/badge/RxJS-7.x-B7178C?style=flat-square&logo=reactivex&logoColor=white)
